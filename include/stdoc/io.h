@@ -8,8 +8,7 @@
  * for the stdoc runtime. Implementation is defined
  * elsewhere.
  */
-void
-stdoc_version(void);
+void stdoc_version(void);
 
 /*
  * stdoc_syscall_write - minimal syscall wrapper for write(2)
@@ -30,8 +29,8 @@ stdoc_version(void);
  * - No error translation is performed.
  * - Intended for low-level/runtime usage only.
  */
-__attribute__((unused)) static long
-stdoc_syscall_write(int fd, const void* buf, unsigned long count)
+__attribute__((unused)) static long stdoc_syscall_write(int fd, const void* buf,
+                                                        unsigned long count)
 {
     long ret;
 
@@ -99,7 +98,7 @@ stdoc_syscall_write(int fd, const void* buf, unsigned long count)
  *   Suitable for freestanding environments, early runtime,
  *   or embedded systems.
  */
-__attribute__((format(printf, 1, 2))) void
-stdoc_printf(const char* format, ...);
+__attribute__((format(printf, 1, 2))) void stdoc_printf(const char* format,
+                                                        ...);
 
 #endif /* STDOC_IO_H */
