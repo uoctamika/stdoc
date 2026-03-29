@@ -4,8 +4,7 @@
 /*
  * stdoc_version - Print library version information
  */
-void
-stdoc_version(void)
+void stdoc_version(void)
 {
     printf("     standard library Uoc     \n");
     printf("Version: 0.0.1 \n");
@@ -30,8 +29,7 @@ stdoc_version(void)
  * - No floating point
  * - No buffering (inefficient for large output)
  */
-void
-stdoc_printf(const char* format, ...)
+void stdoc_printf(const char* format, ...)
 {
     va_list args;
 
