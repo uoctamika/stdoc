@@ -71,8 +71,14 @@ Contributions are welcome for making this library better. You can request new fe
 ### Sources
 
 Wikipedia: https://en.wikipedia.org/wiki/C_(programming_language)
+<br>
 Documentation C: https://devdocs.io/c/
+<br>
 Documentation C Man Pages: man 3 libc
+<br>
 Documentation C Man Pages Online: https://man7.org/linux/man-pages/index.html
+<br>
 ISO C Wiki: https://www.iso-9899.info/wiki/The_Standard
+<br>
 ISO C Books latest: https://www.iso.org/standard/82075.html
+<br>
