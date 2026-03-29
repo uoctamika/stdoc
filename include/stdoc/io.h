@@ -4,7 +4,7 @@
 void stdoc_version(void);
 
 /* --- System Call Wrapper (Internal) --- */
-static long stdoc_syscall_write(int fd, const void *buf, unsigned long count) {
+static long stdoc_syscall_write( __attribute__((unused)) int fd, __attribute__((unused))  const void *buf, __attribute__((unused))  unsigned long count) {
     long ret;
 #if defined(__x86_64__)
     __asm__ volatile (
