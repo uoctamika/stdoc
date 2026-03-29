@@ -1,0 +1,31 @@
+BasedOnStyle: LLVM
+Language: C
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+ColumnLimit: 80
+
+BreakBeforeBraces: Allman
+AlwaysBreakAfterReturnType: All
+
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: false
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+AlignOperands: true
+
+SortIncludes: true
+IncludeBlocks: Regroup
+
+IndentCaseLabels: true
+
+SpaceBeforeParens: ControlStatements
+
+PenaltyBreakComment: 300
