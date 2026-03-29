@@ -29,10 +29,8 @@ void stdoc_version(void);
  * - No error translation is performed.
  * - Intended for low-level/runtime usage only.
  */
-static long stdoc_syscall_write(
-    __attribute__((unused)) int fd,
-    __attribute__((unused)) const void *buf,
-    __attribute__((unused)) unsigned long count)
+__attribute__((unused))
+static long stdoc_syscall_write(int fd, const void *buf, unsigned long count)
 {
     long ret;
 
@@ -71,7 +69,7 @@ static long stdoc_syscall_write(
         "mov x8, #64\n"    /* __NR_write */
         "svc #0"
         : "=r"(ret)
-        : "r"(0), "r"(1), "r"(2)
+        : "r"(fd), "r"(buf), "r"(count)
         : "x8", "memory"
     );
 
@@ -84,7 +82,7 @@ static long stdoc_syscall_write(
         "mov r7, #4\n"     /* __NR_write */
         "swi #0"
         : "=r"(ret)
-        : "r"(0), "r"(1), "r"(2)
+        : "r"(fd), "r"(buf), "r"(count)
         : "r7", "memory"
     );
 
