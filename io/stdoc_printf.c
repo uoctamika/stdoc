@@ -1,6 +1,5 @@
-#include <stdoc/io/stdoc_printf.h>
 #include <stdarg.h>
-
+#include <stdoc/io/stdoc_printf.h>
 
 /*
  * stdoc_printf - Minimal printf implementation
@@ -153,6 +152,3 @@ void stdoc_printf(const char* format, ...)
 
     va_end(args);
 }
-
-
-
