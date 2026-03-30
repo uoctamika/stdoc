@@ -1,14 +1,5 @@
-#ifndef STDOC_IO_H
-#define STDOC_IO_H
-
-/*
- * stdoc_version - print library/version information
- *
- * This function is expected to emit version metadata
- * for the stdoc runtime. Implementation is defined
- * elsewhere.
- */
-void stdoc_version(void);
+#ifndef STDOC_PRINTF_H
+#define STDOC_PRINTF_H
 
 /*
  * stdoc_syscall_write - minimal syscall wrapper for write(2)
@@ -101,4 +92,4 @@ __attribute__((unused)) static long stdoc_syscall_write(int fd, const void* buf,
 __attribute__((format(printf, 1, 2))) void stdoc_printf(const char* format,
                                                         ...);
 
-#endif /* STDOC_IO_H */
+#endif /* STDOC_PRINTF_H */

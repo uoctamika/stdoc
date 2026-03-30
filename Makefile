@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 LIB_NAME  := libstdoc.a
-SUBDIRS   := libsrc
+SUBDIRS   := io
 BUILD_DIR := $(CURDIR)/build
 INC_DIR   := $(CURDIR)/include
 TARGET    := $(BUILD_DIR)/$(LIB_NAME)

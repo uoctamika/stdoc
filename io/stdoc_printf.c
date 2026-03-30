@@ -1,14 +1,5 @@
-#include <stdio.h>
-#include <stdoc/io.h>
-
-/*
- * stdoc_version - Print library version information
- */
-void stdoc_version(void)
-{
-    printf("     standard library Uoc     \n");
-    printf("Version: 0.0.1 \n");
-}
+#include <stdarg.h>
+#include <stdoc/io/stdoc_printf.h>
 
 /*
  * stdoc_printf - Minimal printf implementation

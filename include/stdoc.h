@@ -17,6 +17,7 @@
  * included here.
  */
 
-#include "stdoc/io.h"
+#include "stdoc/io/stdoc_printf.h"
+#include "stdoc/io/stdoc_version.h"
 
 #endif /* STDOC_H */
