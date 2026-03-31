@@ -1,5 +1,3 @@
-SHELL := /bin/bash
-
 OUT := $(BUILD_DIR)
 SRC := $(wildcard *.c)
 OBJ := $(patsubst %.c,$(OUT)/%.o,$(SRC))
@@ -12,16 +10,13 @@ else
     Q := @
 endif
 
-.PHONY: all clear
+.PHONY: all
 
 all: $(OBJ)
 
 $(OUT)/%.o: %.c
-	@mkdir -p $(OUT)
+	@$(MKDIR) $(OUT)
 	@printf "  %-7s %s\n" "CC" "$<"
 	$(Q)$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
-
-clear:
-	@rm -f $(OUT)/*.o $(OUT)/*.d
 
 -include $(DEP)
