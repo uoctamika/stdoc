@@ -19,5 +19,6 @@
 
 #include "stdoc/io/stdoc_printf.h"
 #include "stdoc/io/stdoc_version.h"
+#include "stdoc/utility/compiler/macros/macros.h"
 
 #endif /* STDOC_H */
