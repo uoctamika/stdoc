@@ -74,7 +74,7 @@ Wikipedia: https://en.wikipedia.org/wiki/C_(programming_language)
 <br>
 Documentation C: https://devdocs.io/c/
 <br>
-Documentation C Man Pages: man 3 libc
+Documentation C Man Pages: man libc
 <br>
 Documentation C Man Pages Online: https://man7.org/linux/man-pages/index.html
 <br>
