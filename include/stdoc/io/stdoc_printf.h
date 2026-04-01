@@ -1,95 +1,176 @@
 #ifndef STDOC_PRINTF_H
 #define STDOC_PRINTF_H
 
+#include <stddef.h>
+#include <stdoc/utility/compiler/macros/macros.h>
+
 /*
- * stdoc_syscall_write - minimal syscall wrapper for write(2)
- * @fd:    file descriptor
- * @buf:   buffer to write
- * @count: number of bytes to write
+ * stdoc_printf.h
  *
- * Provides a thin inline abstraction over the write syscall
- * across multiple architectures. This avoids libc dependency
- * and performs a direct kernel transition.
+ * Minimal printf-like interface for stdoc.
  *
- * Return:
- *   On success: number of bytes written
- *   On error:   negative error code (architecture dependent ABI)
+ * This module provides:
+ *   - A lightweight printf implementation
+ *   - Optional libc-free syscall backend
+ *
+ * Design goals:
+ *   - No mandatory libc dependency
+ *   - Small footprint
+ *   - Cross-architecture support
+ *
+ * Supported format specifiers:
+ *   %c - character
+ *   %s - string
+ *   %d - signed decimal (int)
+ *   %x - hexadecimal (lowercase)
+ *   %% - literal '%'
+ *
+ * Limitations:
+ *   - No width / precision / flags
+ *   - No floating-point support
+ *   - No buffering (direct write calls)
+ */
+
+/*
+ * stdoc_syscall_write
+ *
+ * Thin wrapper over the OS write syscall.
+ *
+ * Behavior:
+ *   - If STDOC_USE_LIBC is defined:
+ *       delegates to libc write()
+ *   - Otherwise:
+ *       performs raw syscall via inline assembly
+ *
+ * Parameters:
+ *   fd    - file descriptor (1 = stdout, 2 = stderr)
+ *   buf   - pointer to data buffer
+ *   count - number of bytes to write
+ *
+ * Returns:
+ *   Number of bytes written, or negative error code.
  *
  * Notes:
- * - Clobbers and calling conventions follow each architecture ABI.
- * - No error translation is performed.
- * - Intended for low-level/runtime usage only.
+ *   - ABI-specific implementation per architecture
+ *   - Intended for low-level / freestanding environments
  */
-__attribute__((unused)) static long stdoc_syscall_write(int fd, const void* buf,
-                                                        unsigned long count)
+
+#if !defined(STDOC_USE_LIBC)
+
+STDOC_STATIC_INLINE long
+stdoc_syscall_write(int fd, const void* buf, unsigned long count)
 {
     long ret;
 
 #if defined(__x86_64__)
-    /* x86_64 syscall convention:
-     * rax = syscall number
-     * rdi, rsi, rdx = arguments
+
+    /*
+     * x86_64 Linux syscall ABI:
+     *   rax = syscall number (1 = write)
+     *   rdi = fd
+     *   rsi = buf
+     *   rdx = count
+     *
+     * Clobbers:
+     *   rcx, r11 (as per syscall convention)
      */
-    __asm__ volatile("mov $1, %%rax\n" /* __NR_write */
-                     "syscall"
-                     : "=a"(ret)
-                     : "D"(fd), "S"(buf), "d"(count)
-                     : "rcx", "r11", "memory");
+    __asm__ volatile(
+        "mov $1, %%rax\n"
+        "syscall"
+        : "=a"(ret)
+        : "D"(fd), "S"(buf), "d"(count)
+        : "rcx", "r11", "memory");
 
 #elif defined(__i386__)
-    /* i386 syscall convention (int 0x80):
-     * eax = syscall number
-     * ebx, ecx, edx = arguments
+
+    /*
+     * i386 Linux syscall ABI:
+     *   eax = syscall number (4 = write)
+     *   ebx = fd
+     *   ecx = buf
+     *   edx = count
      */
-    __asm__ volatile("mov $4, %%eax\n" /* __NR_write */
-                     "int $0x80"
-                     : "=a"(ret)
-                     : "b"(fd), "c"(buf), "d"(count)
-                     : "memory");
+    __asm__ volatile(
+        "mov $4, %%eax\n"
+        "int $0x80"
+        : "=a"(ret)
+        : "b"(fd), "c"(buf), "d"(count)
+        : "memory");
 
 #elif defined(__aarch64__)
-    /* AArch64 syscall convention:
-     * x8 = syscall number
-     * x0, x1, x2 = arguments
+
+    /*
+     * AArch64 Linux syscall ABI:
+     *   x8 = syscall number (64 = write)
+     *   x0 = fd
+     *   x1 = buf
+     *   x2 = count
+     *
+     * Note:
+     *   Generic register constraints are used; compiler assigns registers.
+     *   For strict ABI control, explicit register binding may be preferred.
      */
-    __asm__ volatile("mov x8, #64\n" /* __NR_write */
-                     "svc #0"
-                     : "=r"(ret)
-                     : "r"(fd), "r"(buf), "r"(count)
-                     : "x8", "memory");
+    __asm__ volatile(
+        "mov x8, #64\n"
+        "svc #0"
+        : "=r"(ret)
+        : "r"(fd), "r"(buf), "r"(count)
+        : "x8", "memory");
 
 #elif defined(__arm__)
-    /* ARM (32-bit) syscall convention:
-     * r7 = syscall number
-     * r0, r1, r2 = arguments
+
+    /*
+     * ARM (32-bit) Linux syscall ABI:
+     *   r7 = syscall number (4 = write)
+     *   r0 = fd
+     *   r1 = buf
+     *   r2 = count
      */
-    __asm__ volatile("mov r7, #4\n" /* __NR_write */
-                     "swi #0"
-                     : "=r"(ret)
-                     : "r"(fd), "r"(buf), "r"(count)
-                     : "r7", "memory");
+    __asm__ volatile(
+        "mov r7, #4\n"
+        "swi #0"
+        : "=r"(ret)
+        : "r"(fd), "r"(buf), "r"(count)
+        : "r7", "memory");
 
 #else
-#error "Architecture not supported for inline asm syscall"
+#error "stdoc_syscall_write: unsupported architecture"
 #endif
 
     return ret;
 }
 
+#else
+
+#include <unistd.h>
+
+/* libc-backed implementation */
+#define stdoc_syscall_write(fd, buf, count) write(fd, buf, count)
+
+#endif /* STDOC_USE_LIBC */
+
 /*
- * stdoc_printf - lightweight printf implementation
- * @format: format string (printf-style)
- * @...:    variadic arguments
+ * stdoc_printf
  *
- * A minimal formatted output function intended to operate
- * without full libc support. Format string is validated by
- * the compiler via attribute annotations.
+ * Minimal printf-like function.
  *
- * Context:
- *   Suitable for freestanding environments, early runtime,
- *   or embedded systems.
+ * Parameters:
+ *   format - format string
+ *   ...    - variadic arguments
+ *
+ * Returns:
+ *   Total number of bytes written.
+ *
+ * Behavior:
+ *   - Writes directly to stdout (fd = 1)
+ *   - No buffering is performed
+ *
+ * Notes:
+ *   - Format string is validated at compile-time when supported
+ *     via STDOC_ATTR_PRINTF
+ *   - Behavior is undefined for unsupported format specifiers
  */
-__attribute__((format(printf, 1, 2))) void stdoc_printf(const char* format,
-                                                        ...);
+STDOC_ATTR_PRINTF(1, 2)
+int stdoc_printf(const char* format, ...);
 
 #endif /* STDOC_PRINTF_H */
