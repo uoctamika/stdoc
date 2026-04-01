@@ -1,5 +1,5 @@
-#include <stdarg.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdoc/io/stdoc_printf.h>
 
 /*
@@ -17,7 +17,7 @@
 int stdoc_printf(const char* format, ...)
 {
     va_list args;
-    int written = 0; /* total bytes written */
+    int     written = 0; /* total bytes written */
 
     va_start(args, format);
 
@@ -42,11 +42,13 @@ int stdoc_printf(const char* format, ...)
                     const char* s = va_arg(args, const char*);
 
                     /* Handle NULL string safely */
-                    if (!s) s = "(null)";
+                    if (!s)
+                        s = "(null)";
 
                     /* Compute string length manually */
                     unsigned long len = 0;
-                    while (s[len]) len++;
+                    while (s[len])
+                        len++;
 
                     written += stdoc_syscall_write(1, s, len);
                     break;
@@ -60,31 +62,38 @@ int stdoc_printf(const char* format, ...)
                      * Handle INT_MIN separately:
                      * -INT_MIN overflows (two's complement)
                      */
-                    if (n == INT_MIN) {
+                    if (n == INT_MIN)
+                    {
                         written += stdoc_syscall_write(1, "-2147483648", 11);
                         break;
                     }
 
                     char buf[12]; /* enough for -2147483648\0 */
-                    int i = 0;
+                    int  i = 0;
 
-                    if (n == 0) {
+                    if (n == 0)
+                    {
                         buf[i++] = '0';
-                    } else {
-                        if (n < 0) {
+                    }
+                    else
+                    {
+                        if (n < 0)
+                        {
                             written += stdoc_syscall_write(1, "-", 1);
                             n = -n;
                         }
 
                         /* Convert number to reversed string */
-                        while (n > 0) {
+                        while (n > 0)
+                        {
                             buf[i++] = (n % 10) + '0';
                             n /= 10;
                         }
                     }
 
                     /* Output in correct order */
-                    while (i > 0) {
+                    while (i > 0)
+                    {
                         char out = buf[--i];
                         written += stdoc_syscall_write(1, &out, 1);
                     }
@@ -96,21 +105,22 @@ int stdoc_printf(const char* format, ...)
                     unsigned int x = va_arg(args, unsigned int);
 
                     char buf[16];
-                    int i = 0;
+                    int  i = 0;
 
-                    if (x == 0) buf[i++] = '0';
+                    if (x == 0)
+                        buf[i++] = '0';
 
                     /* Convert to hex (lowercase) */
-                    while (x > 0) {
-                        int rem = x % 16;
-                        buf[i++] = (rem < 10)
-                            ? (rem + '0')
-                            : (rem - 10 + 'a');
+                    while (x > 0)
+                    {
+                        int rem  = x % 16;
+                        buf[i++] = (rem < 10) ? (rem + '0') : (rem - 10 + 'a');
                         x /= 16;
                     }
 
                     /* Reverse output */
-                    while (i > 0) {
+                    while (i > 0)
+                    {
                         char out = buf[--i];
                         written += stdoc_syscall_write(1, &out, 1);
                     }

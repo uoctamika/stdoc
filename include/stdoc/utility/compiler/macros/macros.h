@@ -100,10 +100,10 @@
  *   if (STDOC_UNLIKELY(ptr == NULL)) { ... }
  */
 #if STDOC_COMPILER_GNU
-#define STDOC_LIKELY(x)   __builtin_expect(!!(x), 1)
+#define STDOC_LIKELY(x) __builtin_expect(!!(x), 1)
 #define STDOC_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define STDOC_LIKELY(x)   (x)
+#define STDOC_LIKELY(x) (x)
 #define STDOC_UNLIKELY(x) (x)
 #endif
 

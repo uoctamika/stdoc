@@ -57,8 +57,8 @@
 
 #if !defined(STDOC_USE_LIBC)
 
-STDOC_STATIC_INLINE long
-stdoc_syscall_write(int fd, const void* buf, unsigned long count)
+STDOC_STATIC_INLINE long stdoc_syscall_write(int fd, const void* buf,
+                                             unsigned long count)
 {
     long ret;
 
@@ -74,12 +74,11 @@ stdoc_syscall_write(int fd, const void* buf, unsigned long count)
      * Clobbers:
      *   rcx, r11 (as per syscall convention)
      */
-    __asm__ volatile(
-        "mov $1, %%rax\n"
-        "syscall"
-        : "=a"(ret)
-        : "D"(fd), "S"(buf), "d"(count)
-        : "rcx", "r11", "memory");
+    __asm__ volatile("mov $1, %%rax\n"
+                     "syscall"
+                     : "=a"(ret)
+                     : "D"(fd), "S"(buf), "d"(count)
+                     : "rcx", "r11", "memory");
 
 #elif defined(__i386__)
 
@@ -90,12 +89,11 @@ stdoc_syscall_write(int fd, const void* buf, unsigned long count)
      *   ecx = buf
      *   edx = count
      */
-    __asm__ volatile(
-        "mov $4, %%eax\n"
-        "int $0x80"
-        : "=a"(ret)
-        : "b"(fd), "c"(buf), "d"(count)
-        : "memory");
+    __asm__ volatile("mov $4, %%eax\n"
+                     "int $0x80"
+                     : "=a"(ret)
+                     : "b"(fd), "c"(buf), "d"(count)
+                     : "memory");
 
 #elif defined(__aarch64__)
 
@@ -110,12 +108,11 @@ stdoc_syscall_write(int fd, const void* buf, unsigned long count)
      *   Generic register constraints are used; compiler assigns registers.
      *   For strict ABI control, explicit register binding may be preferred.
      */
-    __asm__ volatile(
-        "mov x8, #64\n"
-        "svc #0"
-        : "=r"(ret)
-        : "r"(fd), "r"(buf), "r"(count)
-        : "x8", "memory");
+    __asm__ volatile("mov x8, #64\n"
+                     "svc #0"
+                     : "=r"(ret)
+                     : "r"(fd), "r"(buf), "r"(count)
+                     : "x8", "memory");
 
 #elif defined(__arm__)
 
@@ -126,12 +123,11 @@ stdoc_syscall_write(int fd, const void* buf, unsigned long count)
      *   r1 = buf
      *   r2 = count
      */
-    __asm__ volatile(
-        "mov r7, #4\n"
-        "swi #0"
-        : "=r"(ret)
-        : "r"(fd), "r"(buf), "r"(count)
-        : "r7", "memory");
+    __asm__ volatile("mov r7, #4\n"
+                     "swi #0"
+                     : "=r"(ret)
+                     : "r"(fd), "r"(buf), "r"(count)
+                     : "r7", "memory");
 
 #else
 #error "stdoc_syscall_write: unsupported architecture"
