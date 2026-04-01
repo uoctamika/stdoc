@@ -33,10 +33,10 @@ ARFLAGS := rcs
 
 BUILD ?= debug
 ifeq ($(BUILD),debug)
-    CFLAGS  := -std=gnu11 -fPIC -I$(INC_DIR) -g -O0 -Wall -Wextra -Wpedantic -Wstrict-prototypes
+    CFLAGS  := -std=c11 -fPIC -I$(INC_DIR) -g -O0 -Wall -Wextra -Wpedantic -Wstrict-prototypes
     MODETXT := DEBUG
 else
-    CFLAGS  := -std=gnu11 -fPIC -I$(INC_DIR) -O2 -w
+    CFLAGS  := -std=c11 -fPIC -I$(INC_DIR) -O2 -w
     MODETXT := RELEASE
 endif
 
