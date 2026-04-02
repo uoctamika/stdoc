@@ -13,12 +13,15 @@ else
     INSTALL  := install
     LIB_EXT  := .a
     IS_FILE  := test -f
-    # Termux prefix adjustment
-    ifneq ($(shell which termux-setup-storage 2>/dev/null),)
-        PREFIX ?= $(PREFIX)/usr
-    else
-        PREFIX ?= /usr/local
-    endif
+
+    # Install prefix (overrideable)
+    PREFIX  ?= /usr/local
+
+    # Staging directory (for packaging)
+    DESTDIR ?=
+
+    # Optional privilege escalation
+    SUDO ?=
 endif
 
 LIB_NAME  := libstdoc$(LIB_EXT)
@@ -53,7 +56,7 @@ define log
     @printf "  %-10s %s\n" "$(1)" "$(2)"
 endef
 
-.PHONY: all info subdirs archive install uninstall clear rebuild
+.PHONY: all info subdirs install uninstall clear rebuild
 
 all: info $(TARGET)
 
@@ -61,6 +64,7 @@ info:
 	@echo "OS detected: $(PLATFORM)"
 	@echo "Build mode : $(MODETXT)"
 	@echo "Prefix     : $(PREFIX)"
+	@echo "Destdir    : $(DESTDIR)"
 
 $(TARGET): subdirs
 	$(call log,AR,$(LIB_NAME))
@@ -74,31 +78,41 @@ subdirs:
 	done
 
 install:
-	@$(IS_FILE) "$(TARGET)" || (echo "Error: Target $(LIB_NAME) not found. Run 'make' or 'make BUILD=release' first." && exit 1)
-	$(call log,INSTALL,$(PREFIX))
+	@$(IS_FILE) "$(TARGET)" || (echo "Error: $(LIB_NAME) not built. Run 'make' first." && exit 1)
+	$(call log,INSTALL,$(DESTDIR)$(PREFIX))
 
 ifeq ($(PLATFORM),Windows)
 	@if not exist "$(PREFIX)\lib" $(MKDIR) "$(PREFIX)\lib"
 	@if not exist "$(PREFIX)\include" $(MKDIR) "$(PREFIX)\include"
-	@if exist "$(PREFIX)\include\stdoc.h" echo [WARNING] stdoc.h already exists in $(PREFIX)\include, overwriting...
 	$(Q)copy /Y "$(subst /,\,$(TARGET))" "$(subst /,\,$(PREFIX)\lib\)"
 	$(Q)copy /Y "$(subst /,\,$(INC_DIR)\stdoc.h)" "$(subst /,\,$(PREFIX)\include\)"
 	$(Q)xcopy /E /I /Y "$(subst /,\,$(INC_DIR)\stdoc)" "$(subst /,\,$(PREFIX)\include\stdoc)"
 else
-	@$(INSTALL) -d $(PREFIX)/lib
-	@$(INSTALL) -d $(PREFIX)/include
-	@if [ -f $(PREFIX)/include/stdoc.h ]; then echo "[WARNING] stdoc.h already exists in $(PREFIX)/include, overwriting..."; fi
-	$(Q)$(INSTALL) -m 644 $(TARGET) $(PREFIX)/lib/
-	$(Q)$(INSTALL) -m 644 $(INC_DIR)/stdoc.h $(PREFIX)/include/
-	$(Q)cp -r $(INC_DIR)/stdoc $(PREFIX)/include/
+	@$(SUDO) $(INSTALL) -d $(DESTDIR)$(PREFIX)/lib
+	@$(SUDO) $(INSTALL) -d $(DESTDIR)$(PREFIX)/include
+
+	@if [ -f $(DESTDIR)$(PREFIX)/include/stdoc.h ]; then \
+		echo "[WARNING] stdoc.h already exists, overwriting..."; \
+	fi
+
+	$(Q)$(SUDO) $(INSTALL) -m 644 $(TARGET) $(DESTDIR)$(PREFIX)/lib/
+	$(Q)$(SUDO) $(INSTALL) -m 644 $(INC_DIR)/stdoc.h $(DESTDIR)$(PREFIX)/include/
+	$(Q)$(SUDO) cp -r $(INC_DIR)/stdoc $(DESTDIR)$(PREFIX)/include/
 endif
 	@echo "Installation complete on $(PLATFORM)."
 
 uninstall:
-	$(call log,UNINSTALL,$(PREFIX))
-	$(Q)$(RM) $(PREFIX)/lib/$(LIB_NAME)
-	$(Q)$(RM) $(PREFIX)/include/stdoc.h
-	$(Q)$(RM) $(PREFIX)/include/stdoc
+	$(call log,UNINSTALL,$(DESTDIR)$(PREFIX))
+
+ifeq ($(PLATFORM),Windows)
+	$(Q)$(RM) $(PREFIX)\lib\$(LIB_NAME)
+	$(Q)$(RM) $(PREFIX)\include\stdoc.h
+	$(Q)$(RM) $(PREFIX)\include\stdoc
+else
+	$(Q)$(SUDO) rm -f  $(DESTDIR)$(PREFIX)/lib/$(LIB_NAME)
+	$(Q)$(SUDO) rm -f  $(DESTDIR)$(PREFIX)/include/stdoc.h
+	$(Q)$(SUDO) rm -rf $(DESTDIR)$(PREFIX)/include/stdoc
+endif
 	@echo "Uninstall complete."
 
 clear:
