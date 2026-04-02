@@ -32,8 +32,9 @@ git clone https://github.com/uoctamika/stdoc.git
 Then build this project:
 
 ```bash
-cd stdoc && make BUILD=release && make install
+cd stdoc && sudo make BUILD=release && sudo make install
 ```
+(NOTE:default installation path at /usr/local/ for Linux)
 
 Then you can compile your own projects with stdoc:
 
