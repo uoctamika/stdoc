@@ -8,7 +8,8 @@
  * @idx: Current position in the buffer.
  * @total: Total bytes processed (including those flushed).
  */
-struct printf_ctx {
+struct printf_ctx
+{
     char* buf;
     int   idx;
     int   total;
@@ -47,19 +48,22 @@ static void put_char_ctx(struct printf_ctx* ctx, char c)
  */
 static void put_str_ctx(struct printf_ctx* ctx, const char* s)
 {
-    if (!s) s = "(null)";
+    if (!s)
+        s = "(null)";
     while (*s)
         put_char_ctx(ctx, *s++);
 }
 
 /**
- * put_uint_ctx() - Converts an unsigned number to a given base and adds to buffer.
+ * put_uint_ctx() - Converts an unsigned number to a given base and adds to
+ * buffer.
  * @ctx:       The printf context.
  * @n:         The number to convert.
  * @base:      The base (e.g., 10 or 16).
  * @uppercase: Whether to use uppercase letters for bases > 10.
  */
-static void put_uint_ctx(struct printf_ctx* ctx, unsigned long n, int base, int uppercase)
+static void put_uint_ctx(struct printf_ctx* ctx, unsigned long n, int base,
+                         int uppercase)
 {
     char buf[64]; /* Large enough for 64-bit binary/octal/dec/hex */
     int  i = 0;
@@ -97,7 +101,8 @@ static void put_int_ctx(struct printf_ctx* ctx, long n)
     {
         put_char_ctx(ctx, '-');
         /* Handle potential overflow of -n using unsigned cast */
-        unsigned long un = (n == LONG_MIN) ? (unsigned long)LONG_MAX + 1 : (unsigned long)-n;
+        unsigned long un =
+            (n == LONG_MIN) ? (unsigned long)LONG_MAX + 1 : (unsigned long)-n;
         put_uint_ctx(ctx, un, 10, 0);
     }
     else
@@ -149,15 +154,18 @@ int stdoc_printf(const char* format, ...)
                     break;
 
                 case 'u':
-                    put_uint_ctx(&ctx, (unsigned long)va_arg(args, unsigned int), 10, 0);
+                    put_uint_ctx(
+                        &ctx, (unsigned long)va_arg(args, unsigned int), 10, 0);
                     break;
 
                 case 'x':
-                    put_uint_ctx(&ctx, (unsigned long)va_arg(args, unsigned int), 16, 0);
+                    put_uint_ctx(
+                        &ctx, (unsigned long)va_arg(args, unsigned int), 16, 0);
                     break;
 
                 case 'X':
-                    put_uint_ctx(&ctx, (unsigned long)va_arg(args, unsigned int), 16, 1);
+                    put_uint_ctx(
+                        &ctx, (unsigned long)va_arg(args, unsigned int), 16, 1);
                     break;
 
                 case 'p':
@@ -200,6 +208,7 @@ int stdoc_printf(const char* format, ...)
     /* Final flush to ensure all data is written */
     flush_ctx(&ctx);
 
-    /* Return total bytes processed, which matches bytes written if syscall succeeded */
+    /* Return total bytes processed, which matches bytes written if syscall
+     * succeeded */
     return ctx.total;
 }
