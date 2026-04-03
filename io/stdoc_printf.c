@@ -2,154 +2,204 @@
 #include <stdarg.h>
 #include <stdoc/io/stdoc_printf.h>
 
-/*
- * stdoc_printf implementation
+/**
+ * struct printf_ctx - Internal state for the buffered printf implementation.
+ * @buf: The local buffer to collect output.
+ * @idx: Current position in the buffer.
+ * @total: Total bytes processed (including those flushed).
+ */
+struct printf_ctx {
+    char* buf;
+    int   idx;
+    int   total;
+};
+
+/**
+ * flush_ctx() - Writes the current buffer to stdout.
+ * @ctx: The printf context.
+ */
+static void flush_ctx(struct printf_ctx* ctx)
+{
+    if (ctx->idx > 0)
+    {
+        stdoc_syscall_write(1, ctx->buf, (unsigned long)ctx->idx);
+        ctx->total += ctx->idx;
+        ctx->idx = 0;
+    }
+}
+
+/**
+ * put_char_ctx() - Adds a character to the buffer, flushing if full.
+ * @ctx: The printf context.
+ * @c:   The character to add.
+ */
+static void put_char_ctx(struct printf_ctx* ctx, char c)
+{
+    if (ctx->idx >= STDOC_PRINTF_BUF_SIZE)
+        flush_ctx(ctx);
+    ctx->buf[ctx->idx++] = c;
+}
+
+/**
+ * put_str_ctx() - Adds a string to the buffer.
+ * @ctx: The printf context.
+ * @s:   The string to add.
+ */
+static void put_str_ctx(struct printf_ctx* ctx, const char* s)
+{
+    if (!s) s = "(null)";
+    while (*s)
+        put_char_ctx(ctx, *s++);
+}
+
+/**
+ * put_uint_ctx() - Converts an unsigned number to a given base and adds to buffer.
+ * @ctx:       The printf context.
+ * @n:         The number to convert.
+ * @base:      The base (e.g., 10 or 16).
+ * @uppercase: Whether to use uppercase letters for bases > 10.
+ */
+static void put_uint_ctx(struct printf_ctx* ctx, unsigned long n, int base, int uppercase)
+{
+    char buf[64]; /* Large enough for 64-bit binary/octal/dec/hex */
+    int  i = 0;
+
+    if (n == 0)
+    {
+        put_char_ctx(ctx, '0');
+        return;
+    }
+
+    /* Standard conversion: digits are generated in reverse order */
+    while (n > 0)
+    {
+        int rem = (int)(n % (unsigned long)base);
+        if (rem < 10)
+            buf[i++] = (char)(rem + '0');
+        else
+            buf[i++] = (char)(rem - 10 + (uppercase ? 'A' : 'a'));
+        n /= (unsigned long)base;
+    }
+
+    /* Output digits in correct order */
+    while (i > 0)
+        put_char_ctx(ctx, buf[--i]);
+}
+
+/**
+ * put_int_ctx() - Converts a signed integer to decimal and adds to buffer.
+ * @ctx: The printf context.
+ * @n:   The signed integer.
+ */
+static void put_int_ctx(struct printf_ctx* ctx, long n)
+{
+    if (n < 0)
+    {
+        put_char_ctx(ctx, '-');
+        /* Handle potential overflow of -n using unsigned cast */
+        unsigned long un = (n == LONG_MIN) ? (unsigned long)LONG_MAX + 1 : (unsigned long)-n;
+        put_uint_ctx(ctx, un, 10, 0);
+    }
+    else
+    {
+        put_uint_ctx(ctx, (unsigned long)n, 10, 0);
+    }
+}
+
+/**
+ * stdoc_printf() - Minimal buffered printf implementation.
+ * @format: The format string.
+ * @...:    Variadic arguments.
  *
- * Strategy:
- * - Iterate over format string
- * - On '%' → parse next specifier
- * - Write output immediately via syscall
- *
- * Trade-offs:
- * - Simple & minimal
- * - No buffering → potentially inefficient
+ * This implementation uses a local stack buffer to minimize syscalls.
+ * It flushes the buffer once at the end, or whenever it becomes full.
  */
 int stdoc_printf(const char* format, ...)
 {
-    va_list args;
-    int     written = 0; /* total bytes written */
+    char              local_buf[STDOC_PRINTF_BUF_SIZE];
+    struct printf_ctx ctx;
+    va_list           args;
+
+    ctx.buf   = local_buf;
+    ctx.idx   = 0;
+    ctx.total = 0;
 
     va_start(args, format);
 
     while (*format)
     {
-        if (*format == '%')
+        if (*format == '%' && *(format + 1))
         {
-            format++;
+            format++; /* Skip '%' */
 
             switch (*format)
             {
                 case 'c':
-                {
-                    /* char promoted to int in variadic args */
-                    char c = (char)va_arg(args, int);
-                    written += stdoc_syscall_write(1, &c, 1);
+                    /* char is promoted to int in variadic arguments */
+                    put_char_ctx(&ctx, (char)va_arg(args, int));
                     break;
-                }
 
                 case 's':
-                {
-                    const char* s = va_arg(args, const char*);
-
-                    /* Handle NULL string safely */
-                    if (!s)
-                        s = "(null)";
-
-                    /* Compute string length manually */
-                    unsigned long len = 0;
-                    while (s[len])
-                        len++;
-
-                    written += stdoc_syscall_write(1, s, len);
+                    put_str_ctx(&ctx, va_arg(args, const char*));
                     break;
-                }
 
                 case 'd':
+                case 'i':
+                    put_int_ctx(&ctx, (long)va_arg(args, int));
+                    break;
+
+                case 'u':
+                    put_uint_ctx(&ctx, (unsigned long)va_arg(args, unsigned int), 10, 0);
+                    break;
+
+                case 'x':
+                    put_uint_ctx(&ctx, (unsigned long)va_arg(args, unsigned int), 16, 0);
+                    break;
+
+                case 'X':
+                    put_uint_ctx(&ctx, (unsigned long)va_arg(args, unsigned int), 16, 1);
+                    break;
+
+                case 'p':
                 {
-                    int n = va_arg(args, int);
-
-                    /*
-                     * Handle INT_MIN separately:
-                     * -INT_MIN overflows (two's complement)
-                     */
-                    if (n == INT_MIN)
+                    void* p = va_arg(args, void*);
+                    if (!p)
                     {
-                        written += stdoc_syscall_write(1, "-2147483648", 11);
-                        break;
-                    }
-
-                    char buf[12]; /* enough for -2147483648\0 */
-                    int  i = 0;
-
-                    if (n == 0)
-                    {
-                        buf[i++] = '0';
+                        put_str_ctx(&ctx, "(nil)");
                     }
                     else
                     {
-                        if (n < 0)
-                        {
-                            written += stdoc_syscall_write(1, "-", 1);
-                            n = -n;
-                        }
-
-                        /* Convert number to reversed string */
-                        while (n > 0)
-                        {
-                            buf[i++] = (n % 10) + '0';
-                            n /= 10;
-                        }
-                    }
-
-                    /* Output in correct order */
-                    while (i > 0)
-                    {
-                        char out = buf[--i];
-                        written += stdoc_syscall_write(1, &out, 1);
-                    }
-                    break;
-                }
-
-                case 'x':
-                {
-                    unsigned int x = va_arg(args, unsigned int);
-
-                    char buf[16];
-                    int  i = 0;
-
-                    if (x == 0)
-                        buf[i++] = '0';
-
-                    /* Convert to hex (lowercase) */
-                    while (x > 0)
-                    {
-                        int rem  = x % 16;
-                        buf[i++] = (rem < 10) ? (rem + '0') : (rem - 10 + 'a');
-                        x /= 16;
-                    }
-
-                    /* Reverse output */
-                    while (i > 0)
-                    {
-                        char out = buf[--i];
-                        written += stdoc_syscall_write(1, &out, 1);
+                        put_str_ctx(&ctx, "0x");
+                        put_uint_ctx(&ctx, (unsigned long)p, 16, 0);
                     }
                     break;
                 }
 
                 case '%':
-                    /* Escaped percent */
-                    written += stdoc_syscall_write(1, "%", 1);
+                    put_char_ctx(&ctx, '%');
                     break;
 
                 default:
-                    /*
-                     * Unknown specifier:
-                     * Currently ignored (silent fail)
-                     * Alternative: print as literal "%x"
-                     */
+                    /* Unknown specifier: print literally */
+                    put_char_ctx(&ctx, '%');
+                    put_char_ctx(&ctx, *format);
                     break;
             }
         }
         else
         {
-            /* Normal character */
-            written += stdoc_syscall_write(1, format, 1);
+            /* Literal character */
+            put_char_ctx(&ctx, *format);
         }
 
         format++;
     }
 
     va_end(args);
-    return written;
+
+    /* Final flush to ensure all data is written */
+    flush_ctx(&ctx);
+
+    /* Return total bytes processed, which matches bytes written if syscall succeeded */
+    return ctx.total;
 }

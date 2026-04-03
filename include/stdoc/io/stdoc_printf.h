@@ -22,14 +22,26 @@
  *   %c - character
  *   %s - string
  *   %d - signed decimal (int)
+ *   %i - signed decimal (int, same as %d)
+ *   %u - unsigned decimal (unsigned int)
  *   %x - hexadecimal (lowercase)
+ *   %X - hexadecimal (uppercase)
+ *   %p - pointer address
  *   %% - literal '%'
  *
  * Limitations:
  *   - No width / precision / flags
  *   - No floating-point support
- *   - No buffering (direct write calls)
+ *   - Buffered (single write syscall per printf call)
  */
+
+/*
+ * Default buffer size for stdoc_printf.
+ * 4096 is a common page size and should be sufficient for most logs.
+ */
+#ifndef STDOC_PRINTF_BUF_SIZE
+#define STDOC_PRINTF_BUF_SIZE 4096
+#endif
 
 /*
  * stdoc_syscall_write
@@ -158,8 +170,9 @@ STDOC_STATIC_INLINE long stdoc_syscall_write(int fd, const void* buf,
  *   Total number of bytes written.
  *
  * Behavior:
- *   - Writes directly to stdout (fd = 1)
- *   - No buffering is performed
+ *   - Writes to stdout (fd = 1) using an internal buffer
+ *   - Performs a single syscall per printf call if possible
+ *   - Flushes if buffer capacity is exceeded
  *
  * Notes:
  *   - Format string is validated at compile-time when supported
