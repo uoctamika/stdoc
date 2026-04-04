@@ -69,7 +69,7 @@
 
 #if !defined(STDOC_USE_LIBC)
 
-STDOC_STATIC_INLINE long stdoc_syscall_write(int fd, const void* buf,
+STDOC_STATIC_INLINE static long stdoc_syscall_write(int fd, const void* buf,
                                              unsigned long count)
 {
     long ret;
