@@ -2,9 +2,9 @@
 #define STDOC_VERSION_H
 
 #define STDOC_VERSION_MAJOR 0
-#define STDOC_VERSION_MINOR 0
-#define STDOC_VERSION_PATCH 1
-#define STDOC_VERSION_STRING "0.0.1"
+#define STDOC_VERSION_MINOR 1
+#define STDOC_VERSION_PATCH 0
+#define STDOC_VERSION_STRING "0.5.0"
 
 /* These can be defined at compile time, e.g., -DSTDOC_BUILD_HASH="<git_hash>" */
 #ifndef STDOC_BUILD_HASH
