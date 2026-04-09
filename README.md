@@ -1,4 +1,4 @@
-# stdoc (Standard Uoc)
+# std::oc (Standard::Uoc)
 
 stdoc is a general-purpose utility library for the C programming language. It is designed to provide safer, more consistent, and more ergonomic alternatives to common patterns in standard C, while preserving performance and low-level control.
 
